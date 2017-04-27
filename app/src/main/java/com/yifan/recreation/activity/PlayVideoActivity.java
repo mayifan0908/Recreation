@@ -1,0 +1,107 @@
+package com.yifan.recreation.activity;
+
+import android.os.Bundle;
+import android.support.v7.app.ActionBar;
+import android.view.WindowManager;
+
+import com.yifan.recreation.BaseActivity;
+import com.yifan.recreation.R;
+import com.yifan.recreation.widget.media.AndroidMediaController;
+import com.yifan.recreation.widget.media.IjkVideoView;
+
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
+
+//需要搭配baseactivity，这里默认为baseactivity,并且默认Baseactivity为包名的根目录
+public class PlayVideoActivity extends BaseActivity {
+    private boolean backPressed;
+    private IjkVideoView videoPlayView;
+    private String videoUrl;
+    private AndroidMediaController androidMediaController;
+    boolean isControllerShow = false;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_play_video);
+//这里默认使用的是toolbar的左上角标题，如果需要使用的标题为中心的采用下方注释的代码，将此注释掉即可
+        title = getString(R.string.title_activity_play_video);
+        isShowToolbar = false;
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        ActionBar actionBar = getSupportActionBar();
+        androidMediaController = new AndroidMediaController(this, false);
+//        androidMediaController.setSupportActionBar(actionBar);
+
+        videoUrl = getIntent().getStringExtra("videoUrl");
+
+        initView();
+        initData();
+
+    }
+
+    //初始化UI空间
+    private void initView() {
+        IjkMediaPlayer.loadLibrariesOnce(null);
+        IjkMediaPlayer.native_profileBegin("libijkplayer.so");
+
+
+        videoPlayView = (IjkVideoView) findViewById(R.id.videoPlayView);
+        videoPlayView.setMediaController(androidMediaController);
+//http://58.254.132.66/hc.yinyuetai.com/uploads/videos/common/4630015876835EBDA2F3F4C4D857873A.mp4?sc=510e0f8052f7ed36&br=780&rd=Android&uniqueId=35314df2291a7ba05851ec60beef5a35
+        String video = "http://58.254.132.66/hc.yinyuetai.com/uploads/videos/common/4630015876835EBDA2F3F4C4D857873A.mp4?sc=510e0f8052f7ed36&br=780&rd=Android&uniqueId=35314df2291a7ba05851ec60beef5a35";
+
+
+        videoPlayView.setVideoPath(videoUrl);
+        videoPlayView.start();
+
+//        videoPlayView.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                if (toolbar.isShown()) {
+//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//                    androidMediaController.hide();
+//                } else {
+//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//                    androidMediaController.show();
+//                }
+//
+//                return false;
+//            }
+//        });
+    }
+
+    //初始化数据
+    private void initData() {
+
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        backPressed = true;
+        super.onBackPressed();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (videoPlayView.getCurrentPosition() > 0) {
+            videoPlayView.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (backPressed || videoPlayView.isBackgroundPlayEnabled()) {
+            videoPlayView.stopPlayback();
+            videoPlayView.release(true);
+            videoPlayView.stopBackgroundPlay();
+        } else {
+            videoPlayView.stopBackgroundPlay();
+        }
+        videoPlayView.pause();
+        IjkMediaPlayer.native_profileEnd();
+    }
+}
